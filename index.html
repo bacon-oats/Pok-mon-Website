@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shiny Pokédex</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="top-bar">
+    <h1>Shiny Pokédex</h1>
+    <div class="buttons">
+      <button id="theme-toggle">Toggle Theme</button>
+      <button id="shiny-toggle">Toggle Shiny</button>
+      <button id="checklist-toggle">Checklist Mode</button>
+    </div>
+    <input type="text" id="search" placeholder="Search Pokémon..." />
+  </div>
+
+  <div id="pokemon-container"></div>
+
+  <script src="shinies.js"></script>
+  <script>
+    const container = document.getElementById("pokemon-container");
+    const themeToggle = document.getElementById("theme-toggle");
+    const shinyToggle = document.getElementById("shiny-toggle");
+    const checklistToggle = document.getElementById("checklist-toggle");
+    const searchInput = document.getElementById("search");
+
+    let showingShiny = true;
+    let checklistMode = false;
+    let checkedPokemon = JSON.parse(localStorage.getItem("checkedPokemon")) || {};
+
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    });
+
+    shinyToggle.addEventListener("click", () => {
+      showingShiny = !showingShiny;
+      renderPokemonList();
+    });
+
+    checklistToggle.addEventListener("click", () => {
+      checklistMode = !checklistMode;
+      checklistToggle.textContent = checklistMode ? "Exit Checklist" : "Checklist Mode";
+      renderPokemonList();
+    });
+
+    searchInput.addEventListener("input", renderPokemonList);
+
+    function renderPokemonList() {
+      const query = searchInput.value.toLowerCase();
+      container.innerHTML = "";
+
+      shinyPokemon.forEach(pokemon => {
+        const nameMatches = pokemon.name.toLowerCase().includes(query);
+        if (!nameMatches) return;
+        if (checklistMode && checkedPokemon[pokemon.dex]) return;
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = showingShiny ? pokemon.shiny : pokemon.normal;
+        img.alt = pokemon.name;
+
+        const name = document.createElement("h3");
+        name.textContent = `#${pokemon.dex} ${pokemon.name}`;
+
+        card.appendChild(img);
+        card.appendChild(name);
+
+        if (checklistMode) {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.addEventListener("click", () => {
+            checkedPokemon[pokemon.dex] = true;
+            localStorage.setItem("checkedPokemon", JSON.stringify(checkedPokemon));
+            renderPokemonList();
+          });
+          card.appendChild(checkbox);
+        }
+
+        container.appendChild(card);
+      });
+    }
+
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark");
+    }
+
+    renderPokemonList();
+  </script>
+</body>
+</html>
